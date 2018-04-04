@@ -41,6 +41,7 @@ PINK,
 RED,
 };
 
+//colors of the level selector. Used for rainbow effects
 const Color levelColors[] = {
 LIGHTBLUE,
 BLUE,
@@ -54,7 +55,7 @@ PINK,
 PURPLE,
 };
 
-//all rotations for all blocks. First letter is the block and second is rotation
+//all rotations for all blocks. First letter is the block and second is rotation. displayedBlock points to one of these
 bool I0[] = {
 0,0,0,0,0,
 0,0,0,0,0,
@@ -323,6 +324,7 @@ Image pressA = Image(pressAData);
 */
 
 //contains all placed blocks. 10x20
+
 unsigned char playField[] = {
 0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,
@@ -348,42 +350,43 @@ unsigned char playField[] = {
 
 unsigned char speed = 20;	//frames until block moves down. Value is updated when level goes up
 
-//set by newBlock function
-int blockX;
-int blockY;
+//variables for currently falling block
+//falling block position on playfield. Set by newBlock function
+int blockX;	//0...9
+int blockY;	//0...19
 
-//set by updateGhost function
+unsigned char block;	//block type. Value from 0...6 in order I J L O S T Z
+unsigned char rotationState;	//0...3 for all possible rotations
+
+//position of blocks ghost. Set by updateGhost function
 int ghostBlockX;
 int ghostBlockY;
 
-unsigned char block;	//from 0...6 in order I J L O S T Z
-unsigned char rotationState;
-
-bool *displayedBlock;
+bool *displayedBlock;	//point to the falling block shape. 
 bool *nextDisplayedBlock;	//wall kick testing applied to this before moving the actual piece
 
+unsigned char nextBlock;	//this value is moved to the block variable when the currently falling block hits bottom
 
-unsigned char nextBlock;
+bool *pointNextBlock;	//points to the next blocks shape like displayedBlock 
 
-bool *pointNextBlock;
+//stats kept while playing
+unsigned char rowsCleared;	//how many rows were cleared at the same time. 0...4
+unsigned int allRowsCleared;	//all rows cleared during the whole game
+unsigned char internalRows;	//hidden row counter that resets back to 0 after passing 10. Used during fast level progression
 
-unsigned char rowsCleared;
-unsigned int allRowsCleared;
-unsigned char internalRows;
-
-bool fastAdvance;	//when 1 advance level every 10 lines. Check NES tetris rules
+bool fastAdvance;	//when 1 advance level every 10 lines. 
 
 unsigned long score;
 
-unsigned long highScores[]{	//High scores loaded here on boot
+//High scores loaded here on boot
+unsigned long highScores[]{
 0,
 0,
 0,
 0,
 0,
 };
-
-
+//names loaded here on boot
 char names[][4] = {
 "AAA",
 "AAA",
