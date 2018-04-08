@@ -576,9 +576,7 @@ void clearRow(unsigned char row){
 	
 }
 
-//check if nextDisplayedBlock can exist in the position and returns true when possible
-//in the future probably won't check for negative values, but does for now
-//**could be used to check collision when moving block
+//check if nextDisplayedBlock can exist in the position and returns 1 when possible
 bool checkPosition(int checkBlockX, int checkBlockY){
 
 	//checks every piece of block if it interferes with a piece on the playfield
@@ -589,7 +587,7 @@ bool checkPosition(int checkBlockX, int checkBlockY){
 					if(checkBlockX + x < 0 || checkBlockX + x > 9 || checkBlockY + y > 19){
 						return 0;
 					}
-					if(playField[checkBlockX + x + (max(checkBlockY, 0) * playFieldWidth) + (y * playFieldWidth)] > 0 || x + checkBlockX > 9){
+					if(playField[checkBlockX + x + (checkBlockY * playFieldWidth) + (y * playFieldWidth)] > 0 || x + checkBlockX > 9){
 						return 0;
 					}
 				}
