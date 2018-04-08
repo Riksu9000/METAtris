@@ -363,7 +363,7 @@ int ghostBlockX;
 int ghostBlockY;
 
 bool *displayedBlock;	//point to the falling block shape. 
-bool *nextDisplayedBlock;	//wall kick testing applied to this before moving the actual piece
+bool *nextDisplayedBlock;	//checkPosition uses this pointer when checking for collision. Set it before calling the function
 
 unsigned char nextBlock;	//this value is moved to the block variable when the currently falling block hits bottom
 
@@ -545,97 +545,35 @@ returns 0 if block is placed by placeBlock() function
 else returns 1
 */
 bool move(char direction){
-switch (direction){
-	case 'd':
-		if(block == 0){
-			for(int x = 0; x < 5; x++){
-				for(int y = 0; y < 5; y++){
-					if(displayedBlock[x + (y * 5)] != 0){
-						if(playField[blockX + x + playFieldWidth + (blockY * playFieldWidth) + (y * playFieldWidth)] > 0 || y + blockY >= 19){
-							placeBlock();
-							return 0;
-						}
-					}
-				}
+	switch (direction){
+		case 'd':
+			nextDisplayedBlock = displayedBlock;
+			if(checkPosition(blockX, blockY + 1) == 1){
+				blockY++;
 			}
-			blockY++;
-		}
-		else{
-			for(int x = 0; x < 3; x++){
-				for(int y = 0; y < 3; y++){
-					if(displayedBlock[x + (y * 3)] != 0){
-						if(playField[blockX + x + playFieldWidth + (blockY * playFieldWidth) + (y * playFieldWidth)] > 0 || y + blockY >= 19){
-							placeBlock();
-							return 0;
-						}
-					}
-				}
+			else{
+				placeBlock();
+				return 0;
 			}
-			blockY++;
-		}
-		break;
-		
-	case 'l':
-		if(block == 0){
-			for(int x = 0; x < 5; x++){
-				for(int y = 0; y < 5; y++){
-					if(displayedBlock[x + (y * 5)] != 0){
-						if(playField[blockX + x - 1 + (max(blockY, 0) * playFieldWidth) + (y * playFieldWidth)] > 0 || x + blockX <= 0){
-							return 1;
-						}
-					}
-				}
+			break;
+			
+		case 'l':
+			nextDisplayedBlock = displayedBlock;
+			if(checkPosition(blockX - 1, blockY) == 1){
+				blockX--;
+				gb.sound.tone(moveSoundPitch, 50);
 			}
-			blockX--;
-			gb.sound.tone(moveSoundPitch, 50);
-
-		}
-		else{
-			for(int x = 0; x < 3; x++){
-				for(int y = 0; y < 3; y++){
-					if(displayedBlock[x + (y * 3)] != 0){
-						if(playField[blockX + x - 1 + (blockY * playFieldWidth) + (y * playFieldWidth)] > 0 || x + blockX <= 0){
-							return 1;
-						}
-					}
-				}
+			break;
+			
+		case 'r':
+			nextDisplayedBlock = displayedBlock;
+			if(checkPosition(blockX + 1, blockY) == 1){
+				blockX++;
+				gb.sound.tone(moveSoundPitch, 50);
 			}
-			blockX--;
-			gb.sound.tone(moveSoundPitch, 50);
-		}
-		break;
-		
-	case 'r':
-		if(block == 0){
-			for(int x = 0; x < 5; x++){
-				for(int y = 0; y < 5; y++){
-					if(displayedBlock[x + (y * 5)] != 0){
-						if(playField[blockX + x + 1 + (max(blockY, 0) * playFieldWidth) + (y * playFieldWidth)] > 0 || x + blockX >= 9){
-							return 1;
-						}
-					}
-				}
-			}
-			blockX++;	
-			gb.sound.tone(moveSoundPitch, 50);
-		}
-		else{
-			for(int x = 0; x < 3; x++){
-				for(int y = 0; y < 3; y++){
-					if(displayedBlock[x + (y * 3)] != 0){
-						if(playField[blockX + x + 1 + (blockY * playFieldWidth) + (y * playFieldWidth)] > 0 || x + blockX >= 9){
-							return 1;
-						}
-					}
-				}
-			}
-			blockX++;
-			gb.sound.tone(moveSoundPitch, 50);
-		}
-		break;
+			break;
 	}
 	return 1;
-
 }
 
 
@@ -679,10 +617,10 @@ bool checkPosition(int checkBlockX, int checkBlockY){
 		for(int x = 0; x < 5; x++){
 			for(int y = 0; y < 5; y++){
 				if(nextDisplayedBlock[x + (y * 5)] != 0){
-					if(blockX + checkBlockX + x < 0 || blockX + checkBlockX + x > 9){
+					if(checkBlockX + x < 0 || checkBlockX + x > 9 || checkBlockY + y > 19){
 						return 0;
 					}
-					if(playField[blockX + checkBlockX + x + (max(blockY + checkBlockY, 0) * playFieldWidth) + (y * playFieldWidth)] > 0 || blockX + x + checkBlockX > 9){
+					if(playField[checkBlockX + x + (max(checkBlockY, 0) * playFieldWidth) + (y * playFieldWidth)] > 0 || x + checkBlockX > 9){
 						return 0;
 					}
 				}
@@ -693,11 +631,11 @@ bool checkPosition(int checkBlockX, int checkBlockY){
 		for(int x = 0; x < 3; x++){
 			for(int y = 0; y < 3; y++){
 				if(nextDisplayedBlock[x + (y * 3)] != 0){
-					if(blockX + checkBlockX + x < 0 || blockX + checkBlockX + x > 9){
+					if(checkBlockX + x < 0 || checkBlockX + x > 9 || checkBlockY + y > 19){
 						return 0;
 					}
 				
-					if(playField[blockX + checkBlockX + x + ((blockY + checkBlockY) * playFieldWidth) + (y * playFieldWidth)] > 0 || blockX + x + checkBlockX > 9){
+					if(playField[checkBlockX + x + (checkBlockY * playFieldWidth) + (y * playFieldWidth)] > 0 || x + checkBlockX > 9){
 						return 0;
 					}
 				}
@@ -709,12 +647,12 @@ bool checkPosition(int checkBlockX, int checkBlockY){
 	
 }
 
-//checks for wallkicks according to the official Tetris Super Rotation System
 void rotateCW(){
 	nextDisplayedBlock = blockLayouts[(block * 4) + ((rotationState + 1) % 4)];
 	int x;
 	int y;
 	
+	//check all five possible wall kicks
 	for(int i = 0; i < 5; i++){
 		if(block == 0){
 			x = wallKickICW[(rotationState * 10) + (i * 2)];
@@ -724,16 +662,8 @@ void rotateCW(){
 			x = wallKickCW[(rotationState * 10) + (i * 2)];
 			y = wallKickCW[((rotationState * 10) + (i * 2)) + 1];
 		}
-		SerialUSB.println("OK");
-		SerialUSB.println(x);
-		SerialUSB.println(y);
-		SerialUSB.println(i);
-		
-		SerialUSB.println();
 
-		if(checkPosition(x, y) == 1){
-			SerialUSB.println("Rotation clear");
-
+		if(checkPosition(blockX + x, blockY + y) == 1){
 			displayedBlock = nextDisplayedBlock;
 			blockX = blockX + x;
 			blockY = blockY + y;
