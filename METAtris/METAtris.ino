@@ -1187,10 +1187,11 @@ while(1){
 	gb.display.print("NEXT");
 	
 	
-	//draw next block and border
+	//draw play area border
 	gb.display.drawRect(50,53, 11, 8);
 	
-	if(nextBlock == 0){
+	//draw next block
+	if(nextBlock == 0){	//if I-block
 		gb.display.setColor(blockColors[nextBlock]);
 		gb.display.drawRect(52, 55, 8, 2);
 	}
@@ -1259,6 +1260,8 @@ while(1){
 	}
 	
 	if(gameover == 1){
+		gb.lights.clear();
+		gameoverState();
 		return;
 	}
 
@@ -1444,8 +1447,6 @@ void loop(){
 	showMenu();
 	initialize();
 	gameLoop();
-	gb.lights.clear();
-	gameoverState();
 	for(int i = 0; i < 5; i++){
 		if(score > highScores[i]){
 			newHighScoreScreen(i);
