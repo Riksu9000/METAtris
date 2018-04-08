@@ -1225,35 +1225,17 @@ while(1){
 
 	}
 	
-	//draw ghost block
-	if(block == 0){
-		for(int x = 0; x < 5; x++){
-			for(int y = 0; y < 5; y++){
-				if(displayedBlock[x + (y*5)] == 1){
-					gb.display.setColor(DARKGRAY);
-					gb.display.drawRect(playFieldStartX + ((ghostBlockX + x) * 3), playFieldStartY + ((ghostBlockY + y) * 3), 3, 3);
-				}
-			}
-		}
 	
-	}
-	else{
-		for(int x = 0; x < 3; x++){
-			for(int y = 0; y < 3; y++){
-				if(displayedBlock[x + (y*3)] == 1){
-					gb.display.setColor(DARKGRAY);
-					gb.display.drawRect(playFieldStartX + ((ghostBlockX + x) * 3), playFieldStartY + ((ghostBlockY + y)) * 3, 3, 3);
-				}
-			}
-		}
-	}	
-	
-	//draw falling block
+	//draw falling block and ghost block
 	//different drawing for I-block
 	if(block == 0){
 		for(int x = 0; x < 5; x++){
 			for(int y = 0; y < 5; y++){
 				if(displayedBlock[x + (y*5)] == 1 && y + blockY >= 0){
+					//ghost block first so falling block can override it if necessary
+					gb.display.setColor(DARKGRAY);
+					gb.display.drawRect(playFieldStartX + ((ghostBlockX + x) * 3), playFieldStartY + ((ghostBlockY + y) * 3), 3, 3);
+					//falling block
 					gb.display.setColor(blockColors[block]);
 					gb.display.drawRect(playFieldStartX + ((blockX + x) * 3), playFieldStartY + ((blockY + y) * 3), 3, 3);
 				}
@@ -1265,6 +1247,10 @@ while(1){
 		for(int x = 0; x < 3; x++){
 			for(int y = 0; y < 3; y++){
 				if(displayedBlock[x + (y*3)] == 1 && blockY + y >= 0){
+					//ghost block first so the falling block can override it if necessary
+					gb.display.setColor(DARKGRAY);
+					gb.display.drawRect(playFieldStartX + ((ghostBlockX + x) * 3), playFieldStartY + ((ghostBlockY + y)) * 3, 3, 3);
+					//falling block
 					gb.display.setColor(blockColors[block]);
 					gb.display.drawRect(playFieldStartX + ((blockX + x) * 3), playFieldStartY + ((blockY + y)) * 3, 3, 3);
 				}
