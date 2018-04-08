@@ -31,7 +31,7 @@ Save block 0 to 4 is for top 5 high scores
 extern const byte font5x7[];
 
 
-const Color blockColors[] = {
+const Color PROGMEM blockColors[] = {
 LIGHTBLUE,
 DARKBLUE,
 ORANGE,
@@ -42,7 +42,7 @@ RED,
 };
 
 //colors of the level selector. Used for rainbow effects
-const Color levelColors[] = {
+const Color PROGMEM levelColors[] = {
 LIGHTBLUE,
 BLUE,
 DARKBLUE,
@@ -244,7 +244,7 @@ ZL,
 };
 
 //used to set speed in levels 0...18
-unsigned char speedArray[19] = {
+const unsigned char PROGMEM speedArray[19] = {
 20,
 18,
 16,
@@ -269,7 +269,7 @@ unsigned char speedArray[19] = {
 //array of tests to make before rotating block to figure out if position needs to change also
 //odd numbers are X values and even are Y
 //there are 5 tests for every rotation so up to 10 values need to be checked
-int wallKickCW[] = {
+const int PROGMEM wallKickCW[] = {
 0,0, -1,0, -1,+1, 0,-2, -1,-2,	//0 -> 1 or 0 -> R
 0,0, +1,0, +1,-1, 0,+2, +1,+2,	//1 -> 2 or R -> 2
 0,0, +1,0, +1,+1, 0,-2, +1,-2,	//2 -> 3 or 2 -> L
@@ -277,7 +277,7 @@ int wallKickCW[] = {
 };
 
 //for I block
-int wallKickICW[] = {
+const int PROGMEM wallKickICW[] = {
 0,0, -2,0, +1,0, -2,-1, +1, +2,	//0 -> 1 or 0 -> R
 0,0, -1,0, +2,0, -1,+2, +2,-1,	//1 -> 2 or R -> 2
 0,0, +2,0, -1,0, +2,+1, -1,-2,	//2 -> 3 or 2 -> L
@@ -374,8 +374,6 @@ unsigned char rowsCleared;	//how many rows were cleared at the same time. 0...4
 unsigned int allRowsCleared;	//all rows cleared during the whole game
 unsigned char internalRows;	//hidden row counter that resets back to 0 after passing 10. Used during fast level progression
 
-bool fastAdvance;	//when 1 advance level every 10 lines. 
-
 unsigned long score;
 
 //High scores loaded here on boot
@@ -404,12 +402,6 @@ bool gameover;	//switches to game over state
 unsigned char level = 0;
 unsigned char startLevel = 0;
 
-bool lights = 0;	//run lighteffect
-unsigned char lightTimer;	//used to time light effects
-unsigned char lightEffect = 0;
-
-
-unsigned char delayToDrop = 0;	//how many frames until the block goes down automatically
 
 /*
 set to 1 if down is held after block is placed. Don't move block down manually
@@ -422,32 +414,9 @@ bool downReleasedAfterPlace = 1;
 ** FUNCTIONS
 */
 
-//run each time a new game is started to reset values
-void initialize(){
-	gameover = 0;
-	score = 0;
-	fastAdvance = 0;
-	
-	rowsCleared = 0;
-	allRowsCleared = 0;
-	internalRows = 0;
-
-	level = startLevel;
-	
-	//empty playfield one square at a time
-	for(int i = 0; i < 200; i++){
-		playField[i] = 0;
-	}
-	
-	//run twice to reset next block and current block
-	newBlock();
-	newBlock();
-	setSpeed();
-}
-
 //moves value of nextBlock to block and randomly picks next block, sets block coordinates, sets pointer pointNextBlock
 void newBlock(){
-
+	//check if new block can spawn
 	if(playField[3] > 0 || playField[4] > 0 || playField[5] > 0 || playField[6] > 0){
 		gameover = 1;
 		return;
@@ -596,7 +565,7 @@ void checkRow(){
 }
 
 //moves all rows above given row down, effectively clearing the given row
-void clearRow(int row){
+void clearRow(unsigned char row){
 	
 	for(int j = row; j > 0; j--){
 	
@@ -895,14 +864,12 @@ void showMenu(){
 		gb.display.print("Check high scores");
 
 
-		
 		//difficulty selection box
 		gb.display.drawImage(6, 18, difficultyBar);
 		
 		//draw selector
 		gb.display.drawImage(selectorPosition, 19, selector);
 		
-
 		//show graphic on bottom of screen
 		gb.display.drawImage(0, 52, bottomGraphic);
 	}
@@ -910,6 +877,31 @@ void showMenu(){
 
 //this is the game
 void gameLoop(){
+	//initialize and set variables etc. in gameLoop
+
+	unsigned char delayToDrop = 20;	//how many frames until the block goes down automatically
+	gameover = 0;
+	score = 0;
+
+	rowsCleared = 0;
+	allRowsCleared = 0;
+	internalRows = 0;
+
+	level = startLevel;
+
+	//empty playfield one square at a time
+	for(int i = 0; i < 200; i++){
+		playField[i] = 0;
+	}
+
+	//run twice to reset next block and current block
+	newBlock();
+	newBlock();
+	setSpeed();
+
+	unsigned char lightTimer;	//used to time light effects
+	unsigned char lightEffect = 0;	//if not 0, do the corresponding light effect
+
 while(1){
 
 	while(!gb.update());
@@ -919,7 +911,6 @@ while(1){
 	gb.lights.clear();
 
 	//check buttons
-
 	if(gb.buttons.pressed(BUTTON_A)){
 		rotateCW();
 	}
@@ -939,6 +930,7 @@ while(1){
 	//instantly drop block down
 	if(gb.buttons.pressed(BUTTON_UP)){
 		instaDrop();
+		delayToDrop = speed;
 	}
 
 	if(gb.buttons.repeat(BUTTON_DOWN, 0) == 0){
@@ -990,7 +982,8 @@ while(1){
 		}
 		rowsCleared = 0;
 		
-		if(allRowsCleared >= ((startLevel * 10) + 10) || allRowsCleared >= max(100, ((startLevel * 10) - 50))){
+		if(allRowsCleared >= ((startLevel * 10) + 10) || allRowsCleared >= max(100, (startLevel * 10) - 50)){
+			//if it is the first time the level goes up, set internalRows to < 10
 			if(level == startLevel){
 				level++;
 				internalRows = internalRows % 10;
@@ -1060,10 +1053,9 @@ while(1){
 				}
 
 				break;
-				
-				
+
 		}
-		
+
 	}
 	if(lightEffect == 0){
 		lightTimer = 0;
@@ -1121,8 +1113,8 @@ while(1){
 	gb.display.drawRect(50,53, 11, 8);
 	
 	//draw next block
-	if(nextBlock == 0){	//if I-block
-		gb.display.setColor(blockColors[nextBlock]);
+	gb.display.setColor(blockColors[nextBlock]);
+	if(nextBlock == 0){	//Fixed drawing for I-block
 		gb.display.drawRect(52, 55, 8, 2);
 	}
 	
@@ -1130,7 +1122,6 @@ while(1){
 		for(int x = 0; x < 3; x++){
 			for(int y = 0; y < 2; y++){
 				if(pointNextBlock[x + (y * 3)] > 0 ){
-					gb.display.setColor(blockColors[nextBlock]);
 					gb.display.drawRect(52 + (x * 2), 55 + (y * 2), 2, 2);
 				}
 			}
@@ -1375,7 +1366,6 @@ void setup(){
 void loop(){
 
 	showMenu();
-	initialize();
 	gameLoop();
 	for(int i = 0; i < 5; i++){
 		if(score > highScores[i]){
