@@ -659,38 +659,19 @@ void instaDrop(){
 
 //updates position and rotation of ghost block
 void updateGhost(){
-
 	ghostBlockX = blockX;
 	ghostBlockY = blockY;
+	nextDisplayedBlock = displayedBlock;
 	
 	while(1){
-		if(block == 0){
-			for(int x = 0; x < 5; x++){
-				for(int y = 0; y < 5; y++){
-					if(displayedBlock[x + (y * 5)] != 0){
-						if(playField[ghostBlockX + x + playFieldWidth + (ghostBlockY * playFieldWidth) + (y * playFieldWidth)] > 0 || y + ghostBlockY >= 19){
-							return;
-						}
-					}
-				}
-			}
-
+	
+		if(checkPosition(ghostBlockX, ghostBlockY + 1) == 1){
+			ghostBlockY++;
 		}
 		else{
-			for(int x = 0; x < 3; x++){
-				for(int y = 0; y < 3; y++){
-					if(displayedBlock[x + (y * 3)] != 0){
-						if(playField[ghostBlockX + x + playFieldWidth + (ghostBlockY * playFieldWidth) + (y * playFieldWidth)] > 0 || y + ghostBlockY >= 19){
-							return;
-						}
-					}
-				}
-			}
-
+			return;
 		}
-		ghostBlockY++;
 	}
-
 }
 
 //add values to counters
@@ -1151,13 +1132,13 @@ while(1){
 	if(block == 0){
 		for(int x = 0; x < 5; x++){
 			for(int y = 0; y < 5; y++){
-				if(displayedBlock[x + (y*5)] == 1 && y + blockY >= 0){
+				if(displayedBlock[x + (y*5)] == 1){
 					//ghost block first so falling block can override it if necessary
 					gb.display.setColor(DARKGRAY);
 					gb.display.drawRect(playFieldStartX + ((ghostBlockX + x) * 3), playFieldStartY + ((ghostBlockY + y) * 3), 3, 3);
 					//falling block
 					gb.display.setColor(blockColors[block]);
-					gb.display.drawRect(playFieldStartX + ((blockX + x) * 3), playFieldStartY + ((blockY + y) * 3), 3, 3);
+					gb.display.drawRect(playFieldStartX + ((blockX + x) * 3), max(playFieldStartY + ((blockY + y) * 3), 2), 3, 3);
 				}
 			}
 		}
@@ -1166,7 +1147,7 @@ while(1){
 	else{
 		for(int x = 0; x < 3; x++){
 			for(int y = 0; y < 3; y++){
-				if(displayedBlock[x + (y*3)] == 1 && blockY + y >= 0){
+				if(displayedBlock[x + (y*3)] == 1){
 					//ghost block first so the falling block can override it if necessary
 					gb.display.setColor(DARKGRAY);
 					gb.display.drawRect(playFieldStartX + ((ghostBlockX + x) * 3), playFieldStartY + ((ghostBlockY + y)) * 3, 3, 3);
