@@ -8,7 +8,7 @@
 /*
 Save block 0 to 4 is for top 5 high scores
 
-5 to 9 is for the name. 3 letters
+5 to 9 is for the name. 5 letters as of 18.04
 */
 
 
@@ -29,7 +29,7 @@ Save block 0 to 4 is for top 5 high scores
 #define rotateSoundPitch 500
 
 extern const byte font5x7[];
-
+extern const byte font3x5[];
 
 const Color PROGMEM blockColors[] = {
 LIGHTBLUE,
@@ -318,6 +318,8 @@ Image gameoverText = Image(gameoverTextData);
 const uint8_t pressAData[] = {30, 8, 1, 0, 1, 0x0a, 1, 0xa0, 0x0a,0xaa, 0xaa,0xaa, 0xaa,0xaa, 0xaa,0xaa, 0xaa,0xaa, 0xaa,0xaa, 0x0a,0xaa, 0x07,0x70, 0xa0,0xa0, 0xaa,0x0a, 0xaa,0x00, 0xaa,0x00, 0xaa,0xaa, 0xa0,0x70, 0xaa,0x07, 0x07,0x07, 0x07,0x00, 0x70,0xa0, 0x77,0x00, 0x77,0x0a, 0xaa,0x07, 0x07,0x0a, 0x07,0x07, 0x07,0x70, 0x07,0x07, 0x07,0x70, 0x07,0x70, 0xaa,0xaa, 0x07,0x77, 0x0a,0x07, 0x70,0x07, 0x0a,0x07, 0x70,0xa0, 0x07,0x00, 0x07,0x0a, 0xaa,0x07, 0x07,0x0a, 0x07,0x0a, 0x07,0x0a, 0xa0,0x77, 0x07,0x70, 0x07,0x70, 0xaa,0xaa, 0x07,0x07, 0x0a,0xa0, 0xaa,0xa0, 0xaa,0xaa, 0x00,0xa0, 0x0a,0xa0, 0x0a,0xaa, 0xaa,0xa0, 0xa0,0xaa, 0xaa,0xaa, 0xaa,0xaa, 0xaa,0xaa, 0xaa,0xaa, 0xaa,0xaa, 0xaa,0xaa, 0xaa,0xaa, 0xaa};
 Image pressA = Image(pressAData);
 
+const uint8_t medalsData[] = {6, 30, 1, 0, 1, 0xFF, 1, 0x07, 0x77,0x00, 0x7a,0xaa, 0xf0,0x7a, 0xaa,0xf0, 0xaa,0xaa, 0xf0,0x0f, 0xff,0x00, 0x00,0x00, 0x00,0x07, 0x77,0x00, 0x76,0x66, 0x50,0x76, 0x66,0x50, 0x66,0x66, 0x50,0x05, 0x55,0x00, 0x00,0x00, 0x00,0x0f, 0xff,0x00, 0xf9,0x99, 0x40,0xf9, 0x99,0x40, 0x99,0x99, 0x40,0x04, 0x44,0x00, 0x00,0x00, 0x00,0x07, 0x07,0x00, 0x07,0x07, 0x00,0x07, 0x77,0x00, 0x00,0x07, 0x00,0x00, 0x07,0x07, 0x00,0x00, 0x00,0x07, 0x77,0x00, 0x07,0x00, 0x00,0x07, 0x77,0x00, 0x00,0x07, 0x00,0x07, 0x77,0x07, 0x00,0x00, 0x00};
+Image medals = Image(medalsData);
 
 /*
 ** VARIABLE VARIABLES
@@ -385,12 +387,12 @@ unsigned long highScores[]{
 0,
 };
 //names loaded here on boot
-char names[][4] = {
-"AAA",
-"AAA",
-"AAA",
-"AAA",
-"AAA",
+char names[][6] = {
+"AAAAA",
+"AAAAA",
+"AAAAA",
+"AAAAA",
+"AAAAA",
 };
 
 //if 0, no high score broken. If larger than 0, that number high score was broken. 1 best. 5 last
@@ -749,6 +751,8 @@ void showMenu(){
 
 	unsigned char selection = 0;
 	bool levelDouble = 0;
+	
+	startLevel = startLevel % 10;
 	
 	while(1){
 		while(!gb.update())
@@ -1201,6 +1205,9 @@ void gameoverState(){
 
 void highScoreScreen(){
 
+//if set to 1, dont clear again
+bool highScoresCleared = 0;
+
 while(1){
 
 	while(!gb.update());
@@ -1209,25 +1216,79 @@ while(1){
 	gb.display.clear();
 	gb.lights.clear();
 	
+	gb.display.setColor(DARKGRAY);
+	gb.display.fillRect(0,0,80,7);
 	
+	gb.display.setColor(WHITE);
+	gb.display.cursorY = 1;
+	gb.display.cursorX = 18;
+	gb.display.println("High scores");
 	
-	gb.display.println("HIGH SCORES");
-	gb.display.drawFastHLine(0, 6, 80);
+	//gb.display.drawFastHLine(0, 6, 80);
 	
-	gb.display.cursorY = 8;
+	gb.display.drawImage(0, 12, medals);
+
+	gb.display.cursorY = 12;
+	
+	//print all five high scores
 	for(int i = 0; i < 5; i++){
 		if(newHighScore == i + 1){
 			gb.display.setColor(levelColors[(gb.frameCount / 2) % 10]);
 		}
-		gb.display.print(highScores[i]);
-		gb.display.cursorX = 68;
+		
+		gb.display.cursorX = 7;
+		gb.display.print((highScores[i] / 100000000) % 10);
+		gb.display.print((highScores[i] / 10000000) % 10);
+		gb.display.print((highScores[i] / 1000000) % 10);
+		gb.display.print((highScores[i] / 100000) % 10);
+		gb.display.print((highScores[i] / 10000) % 10);
+		gb.display.print((highScores[i] / 1000) % 10);
+		gb.display.print((highScores[i] / 100) % 10);
+		gb.display.print((highScores[i] / 10) % 10);
+		gb.display.print((highScores[i] / 1) % 10);
+		
+		gb.display.cursorX = 56;
 		gb.display.println(names[i]);
 		gb.display.setColor(WHITE);
 	}
 	
-
-	gb.display.cursorY = 56;
-	gb.display.print("Press A to return");
+	//bottom screen text
+	gb.display.cursorY = 58;
+	if(gb.buttons.repeat(BUTTON_MENU, 0) && highScoresCleared == 0){
+		switch (gb.buttons.timeHeld(BUTTON_MENU) / 20){
+			case 0:
+				gb.display.print("Clearing scores in 5..");
+				break;
+			case 1:			
+				gb.display.print("Clearing scores in 4..");
+				break;
+			case 2:
+				gb.display.print("Clearing scores in 3..");
+				break;
+			case 3:			
+				gb.display.print("Clearing scores in 2..");
+				break;
+			case 4:		
+				gb.display.print("Clearing scores in 1..");
+				break;
+			case 5:
+				for(int i = 0; i < 5; i++){
+					highScores[i] = 0;
+					for(int j = 0; j < 5; j++){
+						names[i][j] = 32;
+					}
+					gb.save.set(i, highScores[i]);
+					gb.save.set(i + 5, names[i]);
+				}
+				highScoresCleared = 1;
+			default:
+				break;
+		}
+	}
+	else{
+		gb.display.print("Press A to return");
+	}
+	
 	
 	if(gb.buttons.pressed(BUTTON_A)){
 		newHighScore = 0;
@@ -1238,57 +1299,38 @@ while(1){
 }
 }
 
+//i = which place the high score is. 0 to 4
 void newHighScoreScreen(int i){
 
-
-unsigned char selectedLetter = 0;	//point to letter
-
-//move all previous records in ram down by one to make sure they won't get overridden
-for(int j = 4; j > i; j--){
-	highScores[j] = highScores[j-1];
-	for(int k = 0; k < 3; k++){
-		names[j][k] = names[j-1][k];
-	}
-}
-
-//set name to AAA
-for(int j = 0; j < 3; j++){
-	names[i][j] = 65; 
-}
-
-while(1){
-	while(!gb.update());
-	gb.display.clear();
-	
-	if(gb.buttons.pressed(BUTTON_UP) || gb.buttons.timeHeld(BUTTON_UP) > 10 && gb.buttons.repeat(BUTTON_UP, 2)){
-		names[i][selectedLetter]++;
-		if(names[i][selectedLetter] > 90){
-			names[i][selectedLetter] = 65;
+	//move all previous records in ram down by one to make sure they won't get overridden
+	for(int number = 4; number > i; number--){
+		//move score
+		highScores[number] = highScores[number-1];
+		//move name letter by letter
+		for(int letter = 0; letter < 5; letter++){
+			names[number][letter] = names[number-1][letter];
 		}
-		gb.sound.playTick();
 	}
-	if(gb.buttons.pressed(BUTTON_DOWN) || gb.buttons.timeHeld(BUTTON_DOWN) > 10 && gb.buttons.repeat(BUTTON_DOWN, 2)){
-		names[i][selectedLetter]--;
-		if(names[i][selectedLetter] < 65){
-			names[i][selectedLetter] = 90;
-		}
-		gb.sound.playTick();
-	}
-	if(gb.buttons.pressed(BUTTON_RIGHT)){
-		selectedLetter = (selectedLetter + 1) % 3;
-		gb.sound.playTick();
-	}
-	if(gb.buttons.pressed(BUTTON_LEFT)){
-		selectedLetter = (selectedLetter + 2) % 3;
-		gb.sound.playTick();
-	}
-	
 
-	if(gb.buttons.pressed(BUTTON_A)){
-		gb.sound.playTick();
-		if(selectedLetter == 2){
+	//name temporarily saved in inputName
+	char inputName[6];
+	gb.getDefaultName(inputName);
+	gb.gui.keyboard("Enter name",inputName, 5);
+
+	//move inputName to names array
+	for(int letter = 0; letter < 5; letter++){
+		names[i][letter] = inputName[letter];
+	}
+
+
+	while(1){
+		while(!gb.update());
+		gb.display.clear();
+
+		if(gb.buttons.pressed(BUTTON_A)){
+			gb.sound.playTick();
 			highScores[i] = score;
-			
+				
 			//save updated scores to sd
 			for(int i = 0; i < 5; i++){
 				gb.save.set(i, highScores[i]);
@@ -1299,40 +1341,32 @@ while(1){
 			return;
 		}
 		
-		else{
-			selectedLetter++;
-		}
-	}	
-	
-	gb.display.setFont(font5x7);
-	
-	gb.display.cursorX = 8;
-	gb.display.setColor(levelColors[(gb.frameCount / 2) % 10]);
-	gb.display.print("High score!");
-	
-	gb.display.setColor(WHITE);
+		gb.display.setFont(font5x7);
+		
+		gb.display.cursorX = 8;
+		gb.display.setColor(levelColors[(gb.frameCount / 2) % 10]);
+		gb.display.print("High score!");
+		
+		gb.display.setColor(WHITE);
 
-	gb.display.cursorX = 8;
-	gb.display.cursorY = 16;
-	gb.display.print(score);
-	
-	gb.display.cursorX = 31;
-	gb.display.cursorY = 32;
-	gb.display.print(names[i]);
-	
-	if(gb.frameCount % 16 < 8){
-		gb.display.drawFastHLine(31 + (selectedLetter * 6), 40, 5);
+		gb.display.cursorX = 8;
+		gb.display.cursorY = 16;
+		gb.display.println(score);
+		
+		gb.display.cursorX = 8;
+		gb.display.println(names[i]);
+		
+		gb.display.setFont(font3x5);
+
+		gb.display.cursorY = 58;
+		gb.display.print("Press A to continue");
 	}
-	
-}
 }
 
 // the setup routine runs once when Gamebuino starts up
 void setup(){
 	// initialize the Gamebuino object
 	gb.begin();
-	SerialUSB.begin(9600);
-	SerialUSB.println("READY");
 	//load scores
 	for(int i = 0; i < 5; i++){
 		highScores[i] = gb.save.get(i);
