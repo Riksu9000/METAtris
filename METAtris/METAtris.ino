@@ -1,6 +1,3 @@
-//imports the Gamebuino library and the gb object
-
-
 /*
 ** INFO
 */
@@ -8,13 +5,11 @@
 /*
 Save block 0 to 4 is for top 5 high scores
 
-5 to 9 is for the name. 5 letters as of 18.04
+5 to 9 is for the name. 5 letters as of 18.4
 */
 
 
-/*
-** CONSTANT VARIABLES, DEFINITIONS AND INCLUDES
-*/
+//imports the Gamebuino library and the gb object
 #include <Gamebuino-Meta.h>
 
 #define playFieldWidth 10
@@ -243,27 +238,20 @@ Z2,
 ZL,
 };
 
-//used to set speed in levels 0...18
-const unsigned char PROGMEM speedArray[19] = {
+//used to set speed in levels 0...11
+const unsigned char PROGMEM speedArray[12] = {
 20,
 18,
 16,
 14,
 12,
 10,
-9,
 8,
-7,
 6,
 5,
-5,
-5,
-4,
-4,
 4,
 3,
-3,
-3,
+2,
 };
 
 //array of tests to make before rotating block to figure out if position needs to change also
@@ -389,6 +377,7 @@ unsigned long highScores[]{
 0,
 0,
 };
+
 //names loaded here on boot
 char names[][6] = {
 "AAAAA",
@@ -552,7 +541,7 @@ bool move(char direction){
 
 
 
-//check rows and if it finds full rows, run clearRow on that row
+//clears full rows
 void checkRow(){
 	for(int y = 0; y < playFieldHeight; y++){
 		for(int x = 0; x < playFieldWidth; x++){
@@ -561,28 +550,24 @@ void checkRow(){
 			}
 			//if didn't break; , clear the row. This method should probably be changed even though it works
 			if(x == 9){
-				clearRow(y);
-				addRows();
+				//moves all rows above y down, overriding the y row and dropping above rows down
+				for(int j = y; j > 0; j--){
+					for(int i = 0; i < playFieldWidth; i++){
+						playField[i + (j * playFieldWidth)] = playField[i + ((j - 1) * playFieldWidth)];
+					}
+				}
+				rowsCleared++;
+				allRowsCleared++;
+				internalRows++;
 			}
 		}
 	}
-
 }
 
-//moves all rows above given row down, effectively clearing the given row
-void clearRow(unsigned char row){
-	
-	for(int j = row; j > 0; j--){
-	
-		for(int i = 0; i < playFieldWidth; i++){
-			playField[i + (j * playFieldWidth)] = playField[i + ((j - 1) * playFieldWidth)];
-		}
-	}
-	
-}
 
 //check if nextDisplayedBlock can exist in the position and returns 1 when possible
 bool checkPosition(int checkBlockX, int checkBlockY){
+	
 
 	//checks every piece of block if it interferes with a piece on the playfield
 	if(block == 0){
@@ -592,7 +577,7 @@ bool checkPosition(int checkBlockX, int checkBlockY){
 					if(checkBlockX + x < 0 || checkBlockX + x > 9 || checkBlockY + y > 19){
 						return 0;
 					}
-					if(playField[checkBlockX + x + (checkBlockY * playFieldWidth) + (y * playFieldWidth)] > 0 || x + checkBlockX > 9){
+					if(playField[checkBlockX + x + (abs(checkBlockY) * playFieldWidth) + (y * playFieldWidth)] > 0 || x + checkBlockX > 9){
 						return 0;
 					}
 				}
@@ -614,7 +599,7 @@ bool checkPosition(int checkBlockX, int checkBlockY){
 			}
 		}
 	}
-	
+
 	return 1;
 	
 }
@@ -650,18 +635,6 @@ void rotateCW(){
 }
 
 
-//run move('d') until block is down and add 2 score for every space the block traveled.
-void instaDrop(){
-	while(1){
-		if(move('d') != 0){
-			score = score + 2;
-		}
-		else{
-			return;
-		}
-	}
-}
-
 //updates position and rotation of ghost block
 void updateGhost(){
 	ghostBlockX = blockX;
@@ -679,22 +652,12 @@ void updateGhost(){
 	}
 }
 
-//add values to counters
-void addRows(){
-	rowsCleared++;
-	allRowsCleared++;
-	internalRows++;
-}
-
 
 //set speed variable based on level
 void setSpeed(){
 
-	if(level < 19){
+	if(level < 12){
 		speed = speedArray[level];
-	}
-	else if(level > 18 && level < 29){
-		speed = 2;
 	}
 	else{
 		speed = 1;
@@ -753,9 +716,6 @@ void showMenu(){
 	unsigned char arrowDestination = 0;
 
 	unsigned char selection = 0;
-	bool levelDouble = 0;
-	
-	startLevel = startLevel % 10;
 	
 	while(1){
 		while(!gb.update())
@@ -786,17 +746,10 @@ void showMenu(){
 			gb.sound.playTick();
 		}
 		
-		if(gb.buttons.repeat(BUTTON_MENU, 0)){
-			levelDouble = 1;
-		}
-		else{
-			levelDouble = 0;
-		}
-		
 		if(gb.buttons.pressed(BUTTON_A)){
 			switch(selection){
 				case 0:
-					startLevel = startLevel + (levelDouble * 10);
+					startLevel = startLevel;
 					gb.sound.playOK();
 					return;
 					break;
@@ -843,7 +796,7 @@ void showMenu(){
 		gb.display.cursorX = 6;
 		gb.display.cursorY = 10;
 		gb.display.print("Set difficulty:");
-		gb.display.print(startLevel + (levelDouble * 10));
+		gb.display.print(startLevel);
 		
 		gb.display.cursorX = 6;
 		gb.display.cursorY = 26;
@@ -915,7 +868,14 @@ while(1){
 	
 	//instantly drop block down
 	if(gb.buttons.pressed(BUTTON_UP)){
-		instaDrop();
+		while(1){
+			if(move('d') != 0){
+				score = score + 2;
+			}
+			else{
+				break;
+			}
+		}
 		delayToDrop = speed;
 	}
 
@@ -968,20 +928,21 @@ while(1){
 		}
 		rowsCleared = 0;
 		
-		if(allRowsCleared >= ((startLevel * 10) + 10) || allRowsCleared >= max(100, (startLevel * 10) - 50)){
+		if(allRowsCleared >= min(( (startLevel * 7) + 10) , 50)){
 			//if it is the first time the level goes up, set internalRows to < 10
 			if(level == startLevel){
 				level++;
-				internalRows = internalRows % 10;
+				internalRows = internalRows % 7;
 			}
 			else{
-				if(internalRows >= 10){
-					internalRows = internalRows - 10;
+				if(internalRows >= 7){
+					internalRows = internalRows - 7;
 					level++;
 				}
 			}
 			setSpeed();
 		}
+		//SerialUSB.println(internalRows);
 		
 		
 	}
@@ -1375,7 +1336,7 @@ void setup(){
 		highScores[i] = gb.save.get(i);
 		gb.save.get(i + 5, names[i]);
 	}
-
+	//SerialUSB.begin(9600);
 	//loop 22 times to cycle through the entire animation
 	for(int i = 0; i < 22; i++){
 		while(!gb.update());	
